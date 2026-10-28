@@ -170,8 +170,18 @@ fun TaskForm(
         )
         Text("Deadline", style = MaterialTheme.typography.labelLarge)
         OutlinedButton(onClick = { showDatePicker = true }) { Text(formatDate(deadline)) }
-        ChoiceRow("Prioritas", TaskOptions.priorities, prioritas) { prioritas = it }
-        ChoiceRow("Status", TaskOptions.statuses, status) { status = it }
+        ChoiceRow(
+            label = "Prioritas",
+            options = TaskOptions.priorities,
+            selected = prioritas,
+            onSelect = { prioritas = it }
+        )
+        ChoiceRow(
+            label = "Status",
+            options = TaskOptions.statuses,
+            selected = status,
+            onSelect = { status = it }
+        )
         Button(
             onClick = {
                 if (mataKuliah.isBlank() || judul.isBlank()) {
