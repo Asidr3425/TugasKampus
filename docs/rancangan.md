@@ -1,0 +1,41 @@
+1. User flow
+Daftar Tugas ──[tombol +]──▶ Tambah Tugas ──[Simpan]──▶ Daftar Tugas
+Daftar Tugas ──[ketuk item]──▶ Detail Tugas ──[Edit]──▶ Edit Tugas ──[Simpan]──▶ Daftar Tugas
+                                   │
+                                   └──[Hapus]──▶ Dialog konfirmasi ──[Ya]──▶ Daftar Tugas
+
+Status (Belum, Proses, Selesai) bisa diubah dari layar Detail dan Edit. Perubahannya langsung terlihat di Daftar.
+
+2. Rancangan layar
+Layar	Route	Isi utama
+Daftar Tugas	list	LazyColumn berisi kartu tugas (judul, mata kuliah, deadline, chip status), tombol tambah (FAB), teks kosong “Belum ada tugas”
+Tambah Tugas	add	Form: mata kuliah, judul, deskripsi, deadline, prioritas, status awal, tombol Simpan
+Detail Tugas	detail/{id}	Semua field, pilihan ubah status, tombol Edit dan Hapus (dengan dialog konfirmasi)
+Edit Tugas	edit/{id}	Form yang sama dengan Tambah, sudah terisi data lama
+
+Validasi sederhana: mata kuliah dan judul wajib diisi. Fitur opsional (filter status, pencarian, indikator prioritas) saya tunda sampai fitur wajib selesai.
+
+3. Model data (tabel tasks)
+==========================================================================================
+|Field		|Tipe Kotlin	|Keterangan						                             |
+==========================================================================================
+|id		|Int		|Primary key, autoGenerate, pembeda tiap tugas		                 |
+|mataKuliah	|String		|Nama mata kuliah					                             |
+|judul		|String		|Judul tugas						                             |
+|deskripsi	|String		|Rincian tugas						                             |
+|deadline	|Long		|Epoch millis, untuk pengurutan dan penanda tenggat dekat        |
+|prioritas	|String		|Rendah / Sedang / Tinggi				                         |
+|status		|String		|Belum / Proses / Selesai				                         |
+==========================================================================================
+Prioritas dan status saya simpan sebagai String agar Room tidak butuh TypeConverter.
+
+4. Struktur paket (sesuai pemisahan screen, state, ViewModel, data layer)
+com.example.tugaskampus
+├── data/local/        → TaskEntity, TaskDao, AppDatabase
+├── data/repository/   → TaskRepository
+├── ui/screens/        → ListScreen, AddScreen, DetailScreen, EditScreen
+├── ui/state/          → TaskUiState
+├── ui/viewmodel/      → TaskViewModel
+└── navigation/        → AppNavGraph
+
+Alur panggilan: Compose UI → ViewModel → Repository → DAO → Database. UI tidak pernah menyentuh DAO atau database.
