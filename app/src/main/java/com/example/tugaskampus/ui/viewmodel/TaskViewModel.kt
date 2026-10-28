@@ -1,50 +1,51 @@
 package com.example.tugaskampus.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.tugaskampus.data.repository.TaskRepository
 import com.example.tugaskampus.model.Task
-import com.example.tugaskampus.model.sampleTasks
 import com.example.tugaskampus.ui.state.TaskUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.launch
 
-/**
- * Mengelola data dan aksi tugas untuk UI.
- * Sumber data sementara masih berupa StateFlow di memori; Room dipasang pada Langkah 4.
- */
-class TaskViewModel : ViewModel() {
-    private val _uiState = MutableStateFlow(TaskUiState(tasks = sampleTasks()))
+/** Menghubungkan operasi UI ke repository dan mengamati perubahan dari Room. */
+class TaskViewModel(
+    private val repository: TaskRepository
+) : ViewModel() {
+    private val _uiState = MutableStateFlow(TaskUiState())
     val uiState: StateFlow<TaskUiState> = _uiState.asStateFlow()
 
-    private var nextId: Int = (_uiState.value.tasks.maxOfOrNull { it.id } ?: 0) + 1
+    init {
+        viewModelScope.launch {
+            repository.observeTasks()
+                .onStart { _uiState.value = _uiState.value.copy(isLoading = true) }
+                .catch {
+                    // Menutup status loading agar UI tidak macet jika aliran data gagal.
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                }
+                .collect { tasks ->
+                    _uiState.value = TaskUiState(tasks = tasks, isLoading = false)
+                }
+        }
+    }
 
     fun addTask(task: Task) {
-        val taskWithId = task.copy(id = nextId)
-        nextId += 1
-        _uiState.value = _uiState.value.copy(
-            tasks = _uiState.value.tasks + taskWithId
-        )
+        viewModelScope.launch { repository.addTask(task) }
     }
 
     fun updateTask(updatedTask: Task) {
-        _uiState.value = _uiState.value.copy(
-            tasks = _uiState.value.tasks.map { task ->
-                if (task.id == updatedTask.id) updatedTask else task
-            }
-        )
+        viewModelScope.launch { repository.updateTask(updatedTask) }
     }
 
     fun updateTaskStatus(taskId: Int, newStatus: String) {
-        _uiState.value = _uiState.value.copy(
-            tasks = _uiState.value.tasks.map { task ->
-                if (task.id == taskId) task.copy(status = newStatus) else task
-            }
-        )
+        viewModelScope.launch { repository.updateTaskStatus(taskId, newStatus) }
     }
 
     fun deleteTask(taskId: Int) {
-        _uiState.value = _uiState.value.copy(
-            tasks = _uiState.value.tasks.filterNot { it.id == taskId }
-        )
+        viewModelScope.launch { repository.deleteTask(taskId) }
     }
 }

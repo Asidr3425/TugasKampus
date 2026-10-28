@@ -2,7 +2,7 @@ package com.example.tugaskampus.model
 
 private const val DAY = 24L * 60 * 60 * 1000
 
-/** Data contoh SEMENTARA untuk Preview dan demo Langkah 2. Dihapus setelah Room dipasang. */
+/** Data contoh untuk Preview Compose. Data awal aplikasi disisipkan oleh AppDatabase. */
 fun sampleTasks(): List<Task> {
     val now = System.currentTimeMillis()
     return listOf(

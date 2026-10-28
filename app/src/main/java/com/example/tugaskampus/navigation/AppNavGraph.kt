@@ -3,17 +3,22 @@ package com.example.tugaskampus.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.tugaskampus.data.local.AppDatabase
+import com.example.tugaskampus.data.repository.TaskRepository
 import com.example.tugaskampus.ui.screens.AddScreen
 import com.example.tugaskampus.ui.screens.DetailScreen
 import com.example.tugaskampus.ui.screens.EditScreen
 import com.example.tugaskampus.ui.screens.ListScreen
 import com.example.tugaskampus.ui.viewmodel.TaskViewModel
+import com.example.tugaskampus.ui.viewmodel.TaskViewModelFactory
 
 private object TaskRoutes {
     const val LIST = "list"
@@ -26,7 +31,14 @@ private object TaskRoutes {
 }
 
 @Composable
-fun AppNavGraph(taskViewModel: TaskViewModel = viewModel()) {
+fun AppNavGraph() {
+    val appContext = LocalContext.current.applicationContext
+    val repository = remember(appContext) {
+        TaskRepository(AppDatabase.getInstance(appContext).taskDao())
+    }
+    val factory = remember(repository) { TaskViewModelFactory(repository) }
+    val taskViewModel: TaskViewModel = viewModel(factory = factory)
+
     val navController = rememberNavController()
     val uiState by taskViewModel.uiState.collectAsState()
 
@@ -38,9 +50,7 @@ fun AppNavGraph(taskViewModel: TaskViewModel = viewModel()) {
             ListScreen(
                 tasks = uiState.tasks,
                 onAddClick = { navController.navigate(TaskRoutes.ADD) },
-                onTaskClick = { taskId ->
-                    navController.navigate(TaskRoutes.detail(taskId))
-                }
+                onTaskClick = { taskId -> navController.navigate(TaskRoutes.detail(taskId)) }
             )
         }
 
